@@ -2,6 +2,7 @@ package controller
 
 import (
 	"gin-rest-api/api"
+	"gin-rest-api/repository"
 	"log"
 	"net/http"
 
@@ -13,17 +14,18 @@ type BookController struct{}
 
 //List : Return list of Books
 func (bc *BookController) List(c *gin.Context) {
-	var books = []api.Book{
-		api.Book{Title: "Scala In Action", Author: "Martin", Pages: 200},
-		api.Book{Title: "Scala In Action", Author: "Martin", Pages: 200},
-	}
+	repository := new(repository.BookRepository)
+	var books = repository.List()
 	c.JSON(200, books)
 }
 
 //Get : Return book by Id
 func (bc *BookController) Get(c *gin.Context) {
 	id := c.Param("id")
-	log.Println("Inside get, Getting book with id " + id)
+	repository := new(repository.BookRepository)
+	book := repository.Get(id)
+	c.JSON(http.StatusOK, book)
+
 }
 
 //Update : Update book by Id
@@ -39,9 +41,13 @@ func (bc *BookController) Delete(c *gin.Context) {
 //Create : Creates bew  Book.
 func (bc *BookController) Create(c *gin.Context) {
 	var book api.Book
+	repository := new(repository.BookRepository)
+
 	if err := c.BindJSON(&book); err != nil {
 		c.JSON(http.StatusBadRequest, err)
 	} else {
-		c.JSON(http.StatusOK, book)
+		bookID := repository.Create(book)
+		//TODO : send location Header
+		c.JSON(http.StatusOK, bookID)
 	}
 }
