@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"gin-rest-api/api"
 	"log"
 	"time"
@@ -93,4 +94,44 @@ func (br *BookRepository) Create(book api.Book) interface{} {
 		log.Fatal("Error while Inserting new Book..")
 	}
 	return result.InsertedID
+}
+
+//Delete Book by ID
+func (br *BookRepository) Delete(id string) (int64, error) {
+	col := db.Collection("books")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objID, _ := primitive.ObjectIDFromHex(id)
+
+	result, err := col.DeleteOne(ctx, bson.M{"_id": objID})
+
+	if err != nil || result.DeletedCount != 1 {
+		return -1, errors.New("No Record Found")
+	}
+	return result.DeletedCount, err
+
+}
+
+//Update Book by ID
+func (br *BookRepository) Update(book api.Book) (int64, error) {
+	col := db.Collection("books")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result, err := col.UpdateOne(
+		ctx,
+		bson.M{"_id": book.ID},
+		bson.D{
+			{"$set", bson.D{
+				{"author", book.Author},
+				{"title", book.Title},
+				{"pages", book.Pages},
+			}},
+		},
+	)
+
+	return result.ModifiedCount, err
+
 }
